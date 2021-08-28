@@ -1,0 +1,206 @@
+<!DOCTYPE html en="UTF8">
+<html>
+<head>
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta content="utf-8" http-equiv="encoding">
+    <title>Dodge the asteroids!</title>
+    <style>
+		body {
+			background-color : black;
+			color : red;
+
+		}
+		#maindiv{
+			position:absolute;
+			width:2em; height:2em;
+			top:40%;
+			left:45%;
+			background-color : yellow;
+
+		}
+
+		.fallingast{
+			position:absolute;
+			height:1.4em;
+			width:1.4em;
+			background-color : red;
+		}
+		.fallinggood{
+			position:absolute;
+			height:1.4em;
+			width:1.4em;
+			background-color : green;
+		}
+		#startgame{
+			border : 1px solid blue;
+			border-radius : 5px;
+			position : absolute;
+			left : 30%;
+			top : 50%;
+			width : 30%;
+			height : 50px;
+			padding : 5px;
+		}
+		#starttext{
+			position : absolute;
+			left:30%;
+			top:30%;
+		}
+		#right{
+			position : fixed;
+			right :0;top:0 ;left:0;bottom:0;
+
+
+		}
+		#instructions{
+			position : absolute;
+			left:20%;
+			top:65%;
+		}
+
+	</style>
+</head>
+<body>
+
+<div id="startgame"><div id="starttext"><strong>START</strong></div></div><br>
+<div id="instructions"><strong>Tilt left to go right,tilt right to go left.<br>Collect the green blocks to get a score bonus.<br>Collecting the red blocks ends the game.<br>Good Luck!</strong></div>
+<div class="asteroid"></div>
+<div class="good"></div>
+<div id="maindiv"></div>
+<div id="score"></div>
+<div id="highscore"></div>
+<div id="right"></div>
+
+</body>
+<script src="jquery.js"></script>
+<script>
+gameready();
+
+function gameready(){
+
+
+	var mainship   = document.querySelector('#maindiv');
+	var astfield = document.querySelector('#right');
+
+
+	var maxY = astfield.clientWidth - mainship.clientWidth;
+
+	function handleOrientation(event) {
+
+		var y = event.gamma; // In degree in the range [-90,90]
+
+
+
+		if (y >  90) { y =  90};
+		if (y < -90) { y = -90};
+
+		//making it reverse
+		y = -1 * y;
+		// To make computation easier we shift the range of
+		// x and y to [0,180]
+
+		y += 90;
+
+		// 15 is half the size of the mainship
+		// It center the positioning point to the center of the mainship
+
+		mainship.style.left = (maxY*y/180 - 15) + "px";
+	}
+
+	window.addEventListener('deviceorientation', handleOrientation);
+
+
+	if(!(localStorage.getItem("highscore") === null)){
+		high = window.localStorage.getItem("highscore");
+		$("#highscore").html("Highscore: "+high);
+	}
+	else{$("#highscore").html("Highscore:0")}
+
+	$('#maindiv').hide();
+	$("#right").hide();
+
+	function startgame(){
+		$("#right").show();
+		$("#left").show();
+		function fall(blocktofall) {
+
+			blocktofall.animate({ 'top': '99%' },3000,
+					function(){$(this).remove();});
+		}
+
+		var score = 0;
+
+		var addast = setInterval(function(){
+				var fallingast = $('.asteroid').clone().removeClass('asteroid').addClass('fallingast').css({top:'-5px',left:Math.floor(Math.random()*99)+"%"}).insertAfter($('.asteroid'));
+				fall(fallingast);
+				},200);
+		var addgood = setInterval(function(){
+				var fallinggood  = $('.good').clone().removeClass('good').addClass('fallinggood').css({top:'-5px',left:Math.floor(Math.random()*99)+"%"}).insertAfter($('.good'));
+				fall(fallinggood);
+				},5000);
+		var timer = setInterval(function(){score+=100;$("#score").html("<strong>Score: "+score+"</strong>");},500);
+		function highscore(){
+			if(!(localStorage.getItem("highscore") === null)){
+				var value = parseInt(window.localStorage.getItem("highscore"),10);
+				if(value < score){
+					window.localStorage.setItem("highscore",score);
+				}
+
+			}
+			else{window.localStorage.setItem("highscore",score);}
+		}
+		function collision($div1, $div2) {
+			var x1 = $div1.offset().left;
+			var y1 = $div1.offset().top;
+			var h1 = $div1.outerHeight(true);
+			var w1 = $div1.outerWidth(true);
+			var b1 = y1 + h1;
+			var r1 = x1 + w1;
+			var x2 = $div2.offset().left;
+			var y2 = $div2.offset().top;
+			var h2 = $div2.outerHeight(true);
+			var w2 = $div2.outerWidth(true);
+			var b2 = y2 + h2;
+			var r2 = x2 + w2;
+
+			if (b1 < y2 || y1 > b2 || r1 < x2 || x1 > r2) return false;
+			return true;
+		}
+
+
+		var isitcolliding = setInterval(function() {
+				$('.fallingast').each(function(){
+						var answer = collision($('#maindiv'), $(this));
+						if(answer){
+						//window.plugins.insomnia.allowSleepAgain();
+						Android.showToast();
+						clearInterval(timer);
+						clearInterval(addast);
+						clearInterval(isitcolliding);
+						highscore();
+						//window.location.reload();
+						}
+
+						});
+				$('.fallinggood').each(function(){
+						var answergood = collision($('#maindiv'), $(this));
+						if(answergood){
+							$(this).remove();
+							score = score + 1000;
+						}
+				});
+		}, 10);
+
+	}
+	$("#startgame").click(function(){
+		$("#startgame").slideUp();
+		$("#instructions").slideUp();
+		$("#maindiv").show();
+		startgame();
+		//window.plugins.insomnia.keepAwake();
+	});
+}
+
+</script>
+</html>

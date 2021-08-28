@@ -1,0 +1,2 @@
+rootProject.name = "Dodge Asteroids"
+include ':app'
